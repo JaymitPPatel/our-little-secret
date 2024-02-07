@@ -3,16 +3,35 @@
 <body>
 
 <canvas id="myCanvas" width="600" height="400" style="position: absolute; left: 0; top: 0;"></canvas>
-<img id="scream" src="https://m.media-amazon.com/images/I/71Mx+Bo7PSL._SL1500_.jpg" alt="The Scream" width="600" height="400">
+<canvas id="cameraCanvas" width="600" height="400" style="position: absolute; left: 0; top: 420px;"></canvas>
+<img id="reveal" src="https://m.media-amazon.com/images/I/71Mx+Bo7PSL._SL1500_.jpg" alt="The Reveal" width="600" height="400">
+<div style="display:none;">
+<img id="annoucement" src="https://m.media-amazon.com/images/I/81Ngq8b4NeL._AC_SX679_.jpg" alt="The Annoucement" width="600" height="400">
+</div>
+<img id="gifImage" src="https://i.pinimg.com/originals/6b/95/1c/6b951ceeae0f4be09535388a4896a7e0.gif" style="position: absolute; left: 0; top: 420px; display: none;"><!-- Hidden GIF -->
 
 <script>
 const canvas = document.getElementById("myCanvas");
 const ctx = canvas.getContext("2d");
 let isDrawing = false;
+const brushSize = 25; // Half the size of the brush
+let clearedArea = 0;
+const halfCanvasArea = (canvas.width * canvas.height) / 2;
+const gifImage = document.getElementById("gifImage");
 
-// Draw non-transparent grey canvas
-ctx.fillStyle = "rgba(128, 128, 128, 1)"; // Grey with 100% opacity
-ctx.fillRect(0, 0, canvas.width, canvas.height);
+// Get the image element
+const backgroundImage = document.getElementById("annoucement");
+
+// Draw the image onto the canvas
+backgroundImage.onload = function() {
+    ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+            // Write a message
+    ctx.font = "20px Arial";
+    ctx.fillStyle = "black";
+    ctx.textAlign = "center";
+    ctx.fillText("Swipe here to", canvas.width/3.3, canvas.height/1.9);
+  ctx.fillText(" reveal another secret!", canvas.width/3.3, canvas.height/1.7);
+};
 
 // Add event listeners for continuous reveal on both mouse and touch events
 canvas.addEventListener('mousedown', startDrawing);
@@ -21,6 +40,29 @@ canvas.addEventListener('mouseup', endDrawing);
 canvas.addEventListener('touchstart', startDrawing);
 canvas.addEventListener('touchmove', draw);
 canvas.addEventListener('touchend', endDrawing);
+
+// Get access to the camera
+navigator.mediaDevices.getUserMedia({ video: true })
+  .then(function(stream) {
+    const cameraCanvas = document.getElementById("cameraCanvas");
+    const cameraCtx = cameraCanvas.getContext("2d");
+    cameraCanvas.width = 600;
+    cameraCanvas.height = 400;
+    const video = document.createElement("video");
+    video.srcObject = stream;
+    video.onloadedmetadata = function(e) {
+      video.play();
+      drawCamera();
+    };
+
+    function drawCamera() {
+      cameraCtx.drawImage(video, 0, 0, cameraCanvas.width, cameraCanvas.height);
+      requestAnimationFrame(drawCamera);
+    }
+  })
+  .catch(function(err) {
+    console.log("An error occurred: " + err);
+  });
 
 function startDrawing(e) {
   e.preventDefault();
@@ -40,12 +82,28 @@ function draw(e) {
       x = e.clientX - rect.left;
       y = e.clientY - rect.top;
     }
-    ctx.clearRect(x - 25, y - 25, 100, 100); // Make a 50x50 area see-through (10 times bigger)
+    ctx.beginPath();
+    ctx.arc(x, y, brushSize, 0, 2 * Math.PI);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0)';
+    ctx.fill();
+    ctx.clearRect(x - brushSize, y - brushSize, brushSize * 2, brushSize * 2); // Make a circular area see-through
+
+    // Calculate cleared area
+    clearedArea += Math.PI * Math.pow(brushSize, 2);
+    
+    // Check if 50% of the canvas has been cleared
+    if (clearedArea >= halfCanvasArea) {
+      showGif();
+    }
   }
 }
 
 function endDrawing() {
   isDrawing = false;
+}
+
+function showGif() {
+  gifImage.style.display = "block";
 }
 </script>
 
