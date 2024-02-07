@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<canvas id="myCanvas" width="600" height="400" style="position: absolute; left: 0; top: 0;"></canvas>
+<img id="scream" src="https://m.media-amazon.com/images/I/71Mx+Bo7PSL._SL1500_.jpg" alt="The Scream" width="600" height="400">
+
+<script>
+const canvas = document.getElementById("myCanvas");
+const ctx = canvas.getContext("2d");
+let isDrawing = false;
+
+// Draw non-transparent grey canvas
+ctx.fillStyle = "rgba(128, 128, 128, 1)"; // Grey with 100% opacity
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+// Add event listeners for continuous reveal on mouse move
+canvas.addEventListener('mousedown', function(e) {
+  isDrawing = true;
+  draw(e);
+});
+
+canvas.addEventListener('mousemove', function(e) {
+  if (isDrawing) {
+    draw(e);
+  }
+});
+
+canvas.addEventListener('mouseup', function() {
+  isDrawing = false;
+});
+
+function draw(e) {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  ctx.clearRect(x - 5, y - 5, 50, 50); // Make a 10x10 area see-through (10 times bigger)
+}
+</script>
+
+</body>
+</html>
