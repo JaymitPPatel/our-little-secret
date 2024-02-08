@@ -9,18 +9,33 @@
 <img id="annoucement" src="https://m.media-amazon.com/images/I/81Ngq8b4NeL._AC_SX679_.jpg" alt="The Annoucement" width="600" height="400">
 </div>
 <img id="gifImage" src="https://i.pinimg.com/originals/6b/95/1c/6b951ceeae0f4be09535388a4896a7e0.gif" style="position: absolute; left: 0; top: 420px; display: none;"><!-- Hidden GIF -->
+<video id="videoElement" autoplay playsinline ></video> <!-- Hidden video element -->
+
+<button id="startRecordingButton" style="position: absolute; left: 0; top: 420px;">Start Recording</button>
+<button id="stopRecordingButton" style="position: absolute; left: 120px; top: 420px;" disabled>Stop Recording</button>
+
 
 <script>
 const canvas = document.getElementById("myCanvas");
 const ctx = canvas.getContext("2d");
+const cameraCanvas = document.getElementById("cameraCanvas");
+const cameraCtx = cameraCanvas.getContext("2d");
 let isDrawing = false;
 const brushSize = 25; // Half the size of the brush
 let clearedArea = 0;
 const halfCanvasArea = (canvas.width * canvas.height) / 2;
 const gifImage = document.getElementById("gifImage");
+const videoElement = document.getElementById("videoElement");
+const startRecordingButton = document.getElementById("startRecordingButton");
+const stopRecordingButton = document.getElementById("stopRecordingButton");
+let mediaRecorder;
+let recordedChunks = [];
 
 // Get the image element
 const backgroundImage = document.getElementById("annoucement");
+
+// Load the sound effect
+const revealSound = new Audio('https://sounds.pond5.com/scratch-ticket-sound-effect-042711139_nw_prev.m4a');
 
 // Draw the image onto the canvas
 backgroundImage.onload = function() {
@@ -41,32 +56,16 @@ canvas.addEventListener('touchstart', startDrawing);
 canvas.addEventListener('touchmove', draw);
 canvas.addEventListener('touchend', endDrawing);
 
-// Get access to the camera
-navigator.mediaDevices.getUserMedia({ video: true })
-  .then(function(stream) {
-    const cameraCanvas = document.getElementById("cameraCanvas");
-    const cameraCtx = cameraCanvas.getContext("2d");
-    cameraCanvas.width = 600;
-    cameraCanvas.height = 400;
-    const video = document.createElement("video");
-    video.srcObject = stream;
-    video.onloadedmetadata = function(e) {
-      video.play();
-      drawCamera();
-    };
-
-    function drawCamera() {
-      cameraCtx.drawImage(video, 0, 0, cameraCanvas.width, cameraCanvas.height);
-      requestAnimationFrame(drawCamera);
-    }
-  })
-  .catch(function(err) {
-    console.log("An error occurred: " + err);
-  });
+startRecordingButton.addEventListener('click', startRecording);
+stopRecordingButton.addEventListener('click', stopRecording);
 
 function startDrawing(e) {
   e.preventDefault();
   isDrawing = true;
+  // Play sound effect
+  revealSound.volume = 0.2;
+  revealSound.loop = true;
+  revealSound.play();
   draw(e);
 }
 
@@ -87,7 +86,7 @@ function draw(e) {
     ctx.fillStyle = 'rgba(0, 0, 0, 0)';
     ctx.fill();
     ctx.clearRect(x - brushSize, y - brushSize, brushSize * 2, brushSize * 2); // Make a circular area see-through
-
+  
     // Calculate cleared area
     clearedArea += Math.PI * Math.pow(brushSize, 2);
     
@@ -100,10 +99,57 @@ function draw(e) {
 
 function endDrawing() {
   isDrawing = false;
+  
+  // Stop sound effect
+  revealSound.pause();
+  revealSound.currentTime = 0;
 }
 
 function showGif() {
   gifImage.style.display = "block";
+}
+
+function startRecording() {
+  startRecordingButton.disabled = true;
+  stopRecordingButton.disabled = false;
+  
+  // Get access to the camera and microphone
+  navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+    .then(function(stream) {
+      videoElement.srcObject = stream;
+      videoElement.play();
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = handleDataAvailable;
+      mediaRecorder.start();
+    })
+    .catch(function(err) {
+      console.log("An error occurred: " + err);
+    });
+}
+
+function stopRecording() {
+  startRecordingButton.disabled = false;
+  stopRecordingButton.disabled = true;
+  
+  mediaRecorder.stop();
+  videoElement.pause();
+  videoElement.srcObject = null; // Disconnect the media stream
+  mediaRecorder = null; // Reset MediaRecorder
+  recordedChunks = []; // Clear recorded chunks
+}
+
+function handleDataAvailable(event) {
+  if (event.data.size > 0) {
+    recordedChunks.push(event.data);
+    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'recorded.webm';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+  }
 }
 </script>
 
