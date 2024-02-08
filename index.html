@@ -156,7 +156,7 @@ function drawVideoFrame() {
   const aspectRatio = videoElement.videoWidth / videoElement.videoHeight;
   let drawWidth = cameraCanvas.width;
   let drawHeight = cameraCanvas.height;
-  if (aspectRatio < 1) {
+  if (aspectRatio > 1) {
     drawHeight = cameraCanvas.width / aspectRatio;
   } else {
     drawWidth = cameraCanvas.height * aspectRatio;
