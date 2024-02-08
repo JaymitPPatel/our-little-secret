@@ -11,8 +11,8 @@
 <img id="gifImage" src="data/reveal.gif" alt="GIF" style="position: absolute; left: 0; top: 420px; display: none;"> <!-- GIF element -->
 <video id="videoElement" autoplay playsinline ></video> <!-- Hidden video element -->
 
-<button id="startRecordingButton" style="position: absolute; left: 0; top: 420px;">Start Recording</button>
-<button id="stopRecordingButton" style="position: absolute; left: 120px; top: 420px;" disabled>Stop Recording</button>
+<button id="startRecordingButton" style="position: absolute; left: 0; top: 420px; width: 300px; height: 50px; font-size: 30px">Start Recording</button>
+<button id="stopRecordingButton" style="position: absolute; left: 300px; top: 420px; width: 300px; height: 50px; font-size: 30px" disabled>Stop Recording</button>
 
 
 <script>
@@ -152,8 +152,18 @@ function startRecording() {
 }
 
 function drawVideoFrame() {
+  // Calculate dimensions to preserve aspect ratio
+  const aspectRatio = videoElement.videoWidth / videoElement.videoHeight;
+  let drawWidth = cameraCanvas.width;
+  let drawHeight = cameraCanvas.height;
+  if (aspectRatio < 1) {
+    drawHeight = cameraCanvas.width / aspectRatio;
+  } else {
+    drawWidth = cameraCanvas.height * aspectRatio;
+  }
+  
   // Draw the current frame of the video onto the camera canvas
-  cameraCtx.drawImage(videoElement, 0, 0, cameraCanvas.width, cameraCanvas.height);
+  cameraCtx.drawImage(videoElement, 0, 0, drawWidth, drawHeight);
 }
 
 function stopRecording() {
