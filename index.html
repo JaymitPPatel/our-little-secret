@@ -2,29 +2,29 @@
 <html>
 <body>
 
-<canvas id="myCanvas" width="600" height="400" style="position: absolute; left: 0; top: 0; z-index: 1"></canvas>
-<canvas id="cameraCanvas" width="600" height="400" style="position: absolute; left: 0; top: 420px;"></canvas>
-<img id="reveal" src="data/reveal.jpg" alt="The Reveal" style="position: relative; left: 100px; top: 0px; z-index: 0" width="400" height="400">
-<div style="display:none;">
-<img id="annoucement" src="data/announcement.avif" alt="The Annoucement" width="600" height="400">
-</div>
-<img id="gifImage" src="data/reveal.gif" alt="GIF" style="position: absolute; left: 0; top: 420px; display: none;"> <!-- GIF element -->
-<video id="videoElement" autoplay playsinline ></video> <!-- Hidden video element -->
+<canvas id="announcementCanvas" width="900" height="600" style="position: absolute; left: 0; top: 0; z-index: 3"></canvas>
+<canvas id="revealCanvas" width="900" height="600" style="position: absolute; left: 0; top: 0; z-index: 2"></canvas>
+<canvas id="cameraCanvas" width="900" height="600" style="position: absolute; left: 0; top: 600px; z-index: 1"></canvas>
+<canvas id="gifCanvas" width="900" height="600" style="position: absolute; left: 0; top: 600px; z-index: 4"></canvas>
+<video id="videoElement" style="position: absolute; left: 0; top: 50%; display: none;"></video> <!-- Hidden video element -->
 
-<button id="startRecordingButton" style="position: absolute; left: 0; top: 420px; width: 300px; height: 50px; font-size: 30px">Start Recording</button>
-<button id="stopRecordingButton" style="position: absolute; left: 300px; top: 420px; width: 300px; height: 50px; font-size: 30px" disabled>Stop Recording</button>
 
+<button id="startRecordingButton" style="position: absolute; left: 0; top: 600px; width: 450px; height: 50px; font-size: 30px; z-index: 5;">Start Recording</button>
+<button id="stopRecordingButton" style="position: absolute; left: 450px; top: 600px; width: 450px; height: 50px; font-size: 30px; z-index: 6;" disabled>Stop Recording</button>
 
 <script>
-const canvas = document.getElementById("myCanvas");
-const ctx = canvas.getContext("2d");
+const announcementCanvas = document.getElementById("announcementCanvas");
+const announcementCtx = announcementCanvas.getContext("2d");
+const revealCanvas = document.getElementById("revealCanvas");
+const revealCtx = revealCanvas.getContext("2d");
 const cameraCanvas = document.getElementById("cameraCanvas");
 const cameraCtx = cameraCanvas.getContext("2d");
+const gifCanvas = document.getElementById("gifCanvas");
+const gifCtx = gifCanvas.getContext("2d");
 let isDrawing = false;
 const brushSize = 25; // Half the size of the brush
 let clearedArea = 0;
-const halfCanvasArea = (canvas.width * canvas.height) / 2;
-const gifImage = document.getElementById("gifImage");
+const halfCanvasArea = (announcementCanvas.width * announcementCanvas.height) / 2;
 const videoElement = document.getElementById("videoElement");
 const startRecordingButton = document.getElementById("startRecordingButton");
 const stopRecordingButton = document.getElementById("stopRecordingButton");
@@ -33,25 +33,32 @@ let recordedChunks = [];
 let allowedToDraw = false;
 let isRecording = false;
 
-// Get the image element
-const backgroundImage = document.getElementById("annoucement");
-
 // Load the sound effect
 const revealSound = new Audio('data/scratch_effect.mp4');
 
-// Draw the image onto the canvas
-backgroundImage.onload = function() {
-    ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+// Draw the announcement image onto the canvas
+const announcementImage = new Image();
+announcementImage.src = "data/annoucement.avif";
+announcementImage.onload = function() {
+    announcementCtx.drawImage(announcementImage, 0, 0, announcementCanvas.width, announcementCanvas.height);
             
     // Write a message
-    ctx.font = "25px Arial";
-    ctx.fillStyle = "white";
-    ctx.textAlign = "center";
+    announcementCtx.font = "25px Arial";
+    announcementCtx.fillStyle = "white";
+    announcementCtx.textAlign = "center";
     let ypos = 0.18;
-    ctx.fillText("Swipe", canvas.width*0.5, canvas.height*ypos);
-    ctx.fillText("to reveal", canvas.width*0.5, canvas.height*(ypos+0.05));
-    ctx.fillText("a secret!", canvas.width*0.5, canvas.height*(ypos+0.05*2));
+    announcementCtx.fillText("Scratch here", announcementCanvas.width*0.5, announcementCanvas.height*ypos);
+    announcementCtx.fillText("to reveal", announcementCanvas.width*0.5, announcementCanvas.height*(ypos+0.05));
+    announcementCtx.fillText("a secret!", announcementCanvas.width*0.5, announcementCanvas.height*(ypos+0.05*2));
 };
+
+// Draw the reveal image onto the canvas
+const revealImage = new Image();
+revealImage.src = 'data/reveal.jpg';
+revealImage.onload = function() {
+    revealCtx.drawImage(revealImage, 0, 0, revealCanvas.width, revealCanvas.height);
+};
+
 
 startRecordingButton.addEventListener('click', startRecording);
 stopRecordingButton.addEventListener('click', stopRecording);
@@ -69,7 +76,7 @@ function startDrawing(e) {
 function draw(e) {
   if (isDrawing) {
     e.preventDefault();
-    const rect = canvas.getBoundingClientRect();
+    const rect = announcementCanvas.getBoundingClientRect();
     let x, y;
     if (e.type === 'touchmove') {
       x = e.touches[0].clientX - rect.left;
@@ -78,11 +85,11 @@ function draw(e) {
       x = e.clientX - rect.left;
       y = e.clientY - rect.top;
     }
-    ctx.beginPath();
-    ctx.arc(x, y, brushSize, 0, 2 * Math.PI);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-    ctx.fill();
-    ctx.clearRect(x - brushSize, y - brushSize, brushSize * 2, brushSize * 2); // Make a circular area see-through
+    announcementCtx.beginPath();
+    announcementCtx.arc(x, y, brushSize, 0, 2 * Math.PI);
+    announcementCtx.fillStyle = 'rgba(0, 0, 0, 0)';
+    announcementCtx.fill();
+    announcementCtx.clearRect(x - brushSize, y - brushSize, brushSize * 2, brushSize * 2); // Make a circular area see-through
   
     // Calculate cleared area
     clearedArea += Math.PI * Math.pow(brushSize, 2);
@@ -103,9 +110,35 @@ function endDrawing() {
 }
 
 function showGif() {
-  gifImage.style.display = "block";
-  
+
+// Alternate gif load, but will have to animate manually.
+//  var gifImage = new Image();
+//  gifImage.src = "data/reveal.gif";
+//  gifCtx.drawImage(gifImage,0,0);
+
+  // show gif
+  const gifImage = document.createElement("img");
+  gifImage.src = "data/reveal.gif";
+  gifImage.alt = "GIF";
+  gifImage.style.position = "absolute";
+  gifImage.style.left = "0";
+  gifImage.style.top = "0";
+  gifImage.style.width = "100%";
+  gifImage.style.height = "100%";
+  gifImage.style.zIndex = "5";
+  gifImage.style.objectFit = "cover"; // Ensure the GIF covers the entire canvas
+  gifCanvas.appendChild(gifImage);
+
+  setTimeout(shareRecordingMessage, 10000);  
   setTimeout(stopRecording, 30000);
+}
+
+function shareRecordingMessage() {
+    // Write a message
+    gifCtx.font = "25px Arial";
+    gifCtx.fillStyle = "black";
+    gifCtx.textAlign = "center";
+    gifCtx.fillText("Please share your reaction video with us!", gifCanvas.width*0.5, gifCanvas.height*0.25);
 }
 
 function startRecording() {
@@ -113,12 +146,12 @@ function startRecording() {
   {
     allowedToDraw = true;
     // Add event listeners for continuous reveal on both mouse and touch events
-    canvas.addEventListener('mousedown', startDrawing);
-    canvas.addEventListener('mousemove', draw);
-    canvas.addEventListener('mouseup', endDrawing);
-    canvas.addEventListener('touchstart', startDrawing);
-    canvas.addEventListener('touchmove', draw);
-    canvas.addEventListener('touchend', endDrawing);
+    announcementCanvas.addEventListener('mousedown', startDrawing);
+    announcementCanvas.addEventListener('mousemove', draw);
+    announcementCanvas.addEventListener('mouseup', endDrawing);
+    announcementCanvas.addEventListener('touchstart', startDrawing);
+    announcementCanvas.addEventListener('touchmove', draw);
+    announcementCanvas.addEventListener('touchend', endDrawing);
 }
 
   startRecordingButton.disabled = true;
