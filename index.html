@@ -2,20 +2,25 @@
 <html>
 <body>
 
-<canvas id="myCanvas" width="600" height="400" style="position: absolute; left: 0; top: 0; z-index: 1"></canvas>
-<canvas id="cameraCanvas" width="600" height="400" style="position: absolute; left: 0; top: 420px;"></canvas>
-<img id="reveal" src="data/reveal.jpg" alt="The Reveal" style="position: relative; left: 100px; top: 0px; z-index: 0" width="400" height="400">
-<div style="display:none;">
-<img id="annoucement" src="data/announcement.avif" alt="The Annoucement" width="600" height="400">
-</div>
-<img id="gifImage" src="data/reveal.gif" alt="GIF" style="position: absolute; left: 0; top: 420px; display: none;"> <!-- GIF element -->
-<video id="videoElement" autoplay playsinline ></video> <!-- Hidden video element -->
+<canvas id="myCanvas" style="position: absolute; left: 0; top: 0; width: 100%; height: 50%; z-index: 2"></canvas>
+<canvas id="cameraCanvas" style="position: absolute; left: 0; top: 50%; width: 100%; height: 50%; z-index: 3"></canvas>
+<canvas id="revealCanvas" style="position: absolute; left: 0; top: 0; width: 100%; height: 50%; z-index: 1"></canvas>
 
-<button id="startRecordingButton" style="position: absolute; left: 0; top: 420px;">Start Recording</button>
-<button id="stopRecordingButton" style="position: absolute; left: 120px; top: 420px;" disabled>Stop Recording</button>
+<div style="display:none;">
+<img id="reveal" src="https://m.media-amazon.com/images/I/418msFaQ+3L._AC_.jpg" alt="The Reveal" style="position: relative; left: 0%; top: 0%; z-index: 0;">
+
+<img id="annoucement" src="https://i.etsystatic.com/34672593/r/il/2fffa1/5473905183/il_794xN.5473905183_ac6i.jpg" alt="The Annoucement">
+</div>
+<img id="gifImage" src="https://i.pinimg.com/originals/6b/95/1c/6b951ceeae0f4be09535388a4896a7e0.gif" alt="GIF" style="position: absolute; left: 0; top: 50%; display: none;"> <!-- GIF element -->
+<video id="videoElement"></video> <!-- Hidden video element -->
+
+<button id="startRecordingButton" style="position: absolute; left: 0; top: 50%; width: 50%; height: 5%; font-size: 30px; z-index: 4">Start Recording</button>
+<button id="stopRecordingButton" style="position: absolute; left: 50%; top: 50%; width: 50%; height: 5%; font-size: 30px; z-index: 5" disabled>Stop Recording</button>
 
 
 <script>
+const revealCanvas = document.getElementById("revealCanvas");
+const revealCtx = revealCanvas.getContext("2d");
 const canvas = document.getElementById("myCanvas");
 const ctx = canvas.getContext("2d");
 const cameraCanvas = document.getElementById("cameraCanvas");
@@ -33,15 +38,25 @@ let recordedChunks = [];
 let allowedToDraw = false;
 let isRecording = false;
 
-// Get the image element
-const backgroundImage = document.getElementById("annoucement");
-
 // Load the sound effect
 const revealSound = new Audio('data/scratch_effect.mp4');
 
+// Get the image element
+const annoucementImage = document.getElementById("annoucement");
+
 // Draw the image onto the canvas
-backgroundImage.onload = function() {
-    ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+annoucementImage.onload = function() {
+    //ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+    // Draw the image while preserving aspect ratio
+    const aspectRatio = annoucementImage.width / annoucementImage.height;
+    let drawWidth = canvas.width;
+    let drawHeight = canvas.height;
+    if (aspectRatio < 1) {
+      drawHeight = canvas.width / aspectRatio;
+    } else {
+      drawWidth = canvas.height * aspectRatio;
+    }
+    ctx.drawImage(annoucementImage, 0, (canvas.height - drawHeight) / 2, drawWidth, drawHeight);
             
     // Write a message
     ctx.font = "25px Arial";
@@ -51,6 +66,24 @@ backgroundImage.onload = function() {
     ctx.fillText("Swipe", canvas.width*0.5, canvas.height*ypos);
     ctx.fillText("to reveal", canvas.width*0.5, canvas.height*(ypos+0.05));
     ctx.fillText("a secret!", canvas.width*0.5, canvas.height*(ypos+0.05*2));
+};
+
+// Get the image element
+const revealImage = document.getElementById("reveal");
+
+// Draw the image onto the canvas
+revealImage.onload = function() {
+    //ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+    // Draw the image while preserving aspect ratio
+    const aspectRatio = revealImage.width / revealImage.height;
+    let drawWidth = revealCanvas.width;
+    let drawHeight = revealCanvas.height;
+    if (aspectRatio < 1) {
+      drawHeight = canvas.width / aspectRatio;
+    } else {
+      drawWidth = canvas.height * aspectRatio;
+    }
+    revealCtx.drawImage(revealImage, 0, (canvas.height - drawHeight) / 2, drawWidth, drawHeight);
 };
 
 startRecordingButton.addEventListener('click', startRecording);
@@ -152,8 +185,18 @@ function startRecording() {
 }
 
 function drawVideoFrame() {
+  // Calculate dimensions to preserve aspect ratio
+  const aspectRatio = videoElement.videoWidth / videoElement.videoHeight;
+  let drawWidth = cameraCanvas.width;
+  let drawHeight = cameraCanvas.height;
+  if (aspectRatio < 1) {
+    drawHeight = cameraCanvas.width / aspectRatio;
+  } else {
+    drawWidth = cameraCanvas.height * aspectRatio;
+  }
+  
   // Draw the current frame of the video onto the camera canvas
-  cameraCtx.drawImage(videoElement, 0, 0, cameraCanvas.width, cameraCanvas.height);
+  cameraCtx.drawImage(videoElement, 0, 0, drawWidth, drawHeight);
 }
 
 function stopRecording() {
