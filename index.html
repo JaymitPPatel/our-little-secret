@@ -128,16 +128,32 @@ function startRecording() {
   // Get access to the camera and microphone
   navigator.mediaDevices.getUserMedia({ video: true, audio: true })
     .then(function(stream) {
+      // Hide the default video display
+      videoElement.style.display = "none";
+
       videoElement.srcObject = stream;
+      
+      // Mute local playback
       videoElement.muted = true;
       videoElement.play();
+      
+      // Start recording video
       mediaRecorder = new MediaRecorder(stream);
       mediaRecorder.ondataavailable = handleDataAvailable;
       mediaRecorder.start();
+      
+      // Display live webcam feed on camera canvas
+      setInterval(drawVideoFrame, 16); // Update every ~16ms (about 60fps)
+   
     })
     .catch(function(err) {
       console.log("An error occurred: " + err);
     });
+}
+
+function drawVideoFrame() {
+  // Draw the current frame of the video onto the camera canvas
+  cameraCtx.drawImage(videoElement, 0, 0, cameraCanvas.width, cameraCanvas.height);
 }
 
 function stopRecording() {
