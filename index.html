@@ -2,13 +2,13 @@
 <html>
 <body>
 
-<canvas id="myCanvas" width="600" height="400" style="position: absolute; left: 0; top: 0;"></canvas>
+<canvas id="myCanvas" width="600" height="400" style="position: absolute; left: 0; top: 0; z-index: 1"></canvas>
 <canvas id="cameraCanvas" width="600" height="400" style="position: absolute; left: 0; top: 420px;"></canvas>
-<img id="reveal" src="https://m.media-amazon.com/images/I/71Mx+Bo7PSL._SL1500_.jpg" alt="The Reveal" width="600" height="400">
+<img id="reveal" src="data/reveal.jpg" alt="The Reveal" style="position: relative; left: 100px; top: 0px; z-index: 0" width="400" height="400">
 <div style="display:none;">
-<img id="annoucement" src="https://m.media-amazon.com/images/I/81Ngq8b4NeL._AC_SX679_.jpg" alt="The Annoucement" width="600" height="400">
+<img id="annoucement" src="data/announcement.avif" alt="The Annoucement" width="600" height="400">
 </div>
-<img id="gifImage" src="https://i.pinimg.com/originals/6b/95/1c/6b951ceeae0f4be09535388a4896a7e0.gif" style="position: absolute; left: 0; top: 420px; display: none;"><!-- Hidden GIF -->
+<img id="gifImage" src="data/reveal.gif" alt="GIF" style="position: absolute; left: 0; top: 420px; display: none;"> <!-- GIF element -->
 <video id="videoElement" autoplay playsinline ></video> <!-- Hidden video element -->
 
 <button id="startRecordingButton" style="position: absolute; left: 0; top: 420px;">Start Recording</button>
@@ -30,31 +30,28 @@ const startRecordingButton = document.getElementById("startRecordingButton");
 const stopRecordingButton = document.getElementById("stopRecordingButton");
 let mediaRecorder;
 let recordedChunks = [];
+let allowedToDraw = false;
+let isRecording = false;
 
 // Get the image element
 const backgroundImage = document.getElementById("annoucement");
 
 // Load the sound effect
-const revealSound = new Audio('https://sounds.pond5.com/scratch-ticket-sound-effect-042711139_nw_prev.m4a');
+const revealSound = new Audio('data/scratch_effect.mp4');
 
 // Draw the image onto the canvas
 backgroundImage.onload = function() {
     ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
-            // Write a message
-    ctx.font = "20px Arial";
-    ctx.fillStyle = "black";
+            
+    // Write a message
+    ctx.font = "25px Arial";
+    ctx.fillStyle = "white";
     ctx.textAlign = "center";
-    ctx.fillText("Swipe here to", canvas.width/3.3, canvas.height/1.9);
-  ctx.fillText(" reveal another secret!", canvas.width/3.3, canvas.height/1.7);
+    let ypos = 0.18;
+    ctx.fillText("Swipe", canvas.width*0.5, canvas.height*ypos);
+    ctx.fillText("to reveal", canvas.width*0.5, canvas.height*(ypos+0.05));
+    ctx.fillText("a secret!", canvas.width*0.5, canvas.height*(ypos+0.05*2));
 };
-
-// Add event listeners for continuous reveal on both mouse and touch events
-canvas.addEventListener('mousedown', startDrawing);
-canvas.addEventListener('mousemove', draw);
-canvas.addEventListener('mouseup', endDrawing);
-canvas.addEventListener('touchstart', startDrawing);
-canvas.addEventListener('touchmove', draw);
-canvas.addEventListener('touchend', endDrawing);
 
 startRecordingButton.addEventListener('click', startRecording);
 stopRecordingButton.addEventListener('click', stopRecording);
@@ -107,11 +104,26 @@ function endDrawing() {
 
 function showGif() {
   gifImage.style.display = "block";
+  
+  setTimeout(stopRecording, 30000);
 }
 
 function startRecording() {
+  if (allowedToDraw == false)
+  {
+    allowedToDraw = true;
+    // Add event listeners for continuous reveal on both mouse and touch events
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', endDrawing);
+    canvas.addEventListener('touchstart', startDrawing);
+    canvas.addEventListener('touchmove', draw);
+    canvas.addEventListener('touchend', endDrawing);
+}
+
   startRecordingButton.disabled = true;
   stopRecordingButton.disabled = false;
+  isRecording = true;
   
   // Get access to the camera and microphone
   navigator.mediaDevices.getUserMedia({ video: true, audio: true })
@@ -129,14 +141,17 @@ function startRecording() {
 }
 
 function stopRecording() {
-  startRecordingButton.disabled = false;
-  stopRecordingButton.disabled = true;
-  
-  mediaRecorder.stop();
-  videoElement.pause();
-  videoElement.srcObject = null; // Disconnect the media stream
-  mediaRecorder = null; // Reset MediaRecorder
-  recordedChunks = []; // Clear recorded chunks
+  if (isRecording)
+  {
+    startRecordingButton.disabled = false;
+    stopRecordingButton.disabled = true;
+
+    mediaRecorder.stop();
+    videoElement.pause();
+    videoElement.srcObject = null; // Disconnect the media stream
+    mediaRecorder = null; // Reset MediaRecorder
+    recordedChunks = []; // Clear recorded chunks
+  }
 }
 
 function handleDataAvailable(event) {
