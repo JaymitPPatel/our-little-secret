@@ -33,6 +33,14 @@ let recordedChunks = [];
 let allowedToDraw = false;
 let isRecording = false;
 
+// Add event listeners for continuous reveal on both mouse and touch events
+announcementCanvas.addEventListener('mousedown', startDrawing);
+announcementCanvas.addEventListener('mousemove', draw);
+announcementCanvas.addEventListener('mouseup', endDrawing);
+announcementCanvas.addEventListener('touchstart', startDrawing);
+announcementCanvas.addEventListener('touchmove', draw);
+announcementCanvas.addEventListener('touchend', endDrawing);
+
 // Load the sound effect
 const revealSound = new Audio('data/scratch_effect.mp4');
 
@@ -43,13 +51,13 @@ announcementImage.onload = function() {
     announcementCtx.drawImage(announcementImage, 0, 0, announcementCanvas.width, announcementCanvas.height);
             
     // Write a message
-    announcementCtx.font = "25px Arial";
+    announcementCtx.font = "40px Arial";
     announcementCtx.fillStyle = "white";
     announcementCtx.textAlign = "center";
     let ypos = 0.18;
     announcementCtx.fillText("Scratch here", announcementCanvas.width*0.5, announcementCanvas.height*ypos);
     announcementCtx.fillText("to reveal", announcementCanvas.width*0.5, announcementCanvas.height*(ypos+0.05));
-    announcementCtx.fillText("a secret!", announcementCanvas.width*0.5, announcementCanvas.height*(ypos+0.05*2));
+    announcementCtx.fillText("another secret!", announcementCanvas.width*0.5, announcementCanvas.height*(ypos+0.05*2));
 };
 
 // Draw the reveal image onto the canvas
@@ -95,7 +103,7 @@ function draw(e) {
     clearedArea += Math.PI * Math.pow(brushSize, 2);
     
     // Check if 50% of the canvas has been cleared
-    if (clearedArea >= halfCanvasArea) {
+    if ((clearedArea >= halfCanvasArea) && isRecording) {
       showGif();
     }
   }
@@ -142,18 +150,6 @@ function shareRecordingMessage() {
 }
 
 function startRecording() {
-  if (allowedToDraw == false)
-  {
-    allowedToDraw = true;
-    // Add event listeners for continuous reveal on both mouse and touch events
-    announcementCanvas.addEventListener('mousedown', startDrawing);
-    announcementCanvas.addEventListener('mousemove', draw);
-    announcementCanvas.addEventListener('mouseup', endDrawing);
-    announcementCanvas.addEventListener('touchstart', startDrawing);
-    announcementCanvas.addEventListener('touchmove', draw);
-    announcementCanvas.addEventListener('touchend', endDrawing);
-}
-
   startRecordingButton.disabled = true;
   stopRecordingButton.disabled = false;
   isRecording = true;
@@ -216,7 +212,7 @@ function stopRecording() {
 function handleDataAvailable(event) {
   if (event.data.size > 0) {
     recordedChunks.push(event.data);
-    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+    const blob = new Blob(recordedChunks, { type: 'video/mp4' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
